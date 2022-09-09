@@ -1,0 +1,40 @@
+{
+  "name": "ConsCircles",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bsync": "browser-sync start --config bs-config.js",
+    "build:dev": "run-s build:scss build:js test",
+    "build:js": "esbuild ./src/js/ConsCircles.js --bundle --outfile=./dist/ConsCircles.js",
+    "build:scss": "sass src/css/ --source-map",
+    "dev_watch": "chokidar src/**.* -c 'npm run build:dev'",
+    "dev": "npm install && run-p dev_watch bsync",
+    "test": "jest ./src/js/*.test.js --notify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "/Users/glyncannon/CloudStation/gitrepos/ConsCircles/"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "blissfuljs": "^1.0.6",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "browser-sync": "^2.27.10",
+    "chokidar": "^3.5.3",
+    "chokidar-cli": "^3.0.0",
+    "esbuild": "^0.15.7",
+    "jest": "^29.0.2",
+    "jest-environment-jsdom": "^29.0.2",
+    "node-notifier": "^10.0.1",
+    "npm-run-all": "^4.1.5",
+    "sass": "^1.54.9"
+  },
+  "jest": {
+    "verbose": true
+  }
+}
