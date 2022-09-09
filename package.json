@@ -8,7 +8,7 @@
     "build:dev": "run-s build:scss build:js test",
     "build:js": "esbuild ./src/js/ConsCircles.js --bundle --outfile=./dist/ConsCircles.js",
     "build:scss": "sass src/css/ --source-map",
-    "dev_watch": "chokidar src/**.* -c 'npm run build:dev'",
+    "dev_watch": "chokidar src/*/**.{js,scss} -c 'npm run build:dev'",
     "dev": "npm install && run-p dev_watch bsync",
     "test": "jest ./src/js/*.test.js --notify"
   },
@@ -24,7 +24,6 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "browser-sync": "^2.27.10",
     "chokidar": "^3.5.3",
     "chokidar-cli": "^3.0.0",
     "esbuild": "^0.15.7",
