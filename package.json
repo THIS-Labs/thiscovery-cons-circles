@@ -6,7 +6,7 @@
   "scripts": {
     "bsync": "browser-sync start --config bs-config.js",
     "build:dev": "run-s build:scss build:js test",
-    "build:js": "esbuild ./src/js/ConsCircles.js --bundle --outfile=./dist/ConsCircles.js",
+    "build:js": "esbuild ./src/js/ConsCircles.js --bundle --outfile=./dist/ConsCircles.js --sourcemap && esbuild ./src/js/index.js --bundle --outfile=./dist/index.js",
     "build:scss": "sass src/css/ --source-map",
     "dev_watch": "chokidar src/*/**.{js,scss} -c 'npm run build:dev'",
     "dev": "npm install && run-p dev_watch bsync",
@@ -21,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "blissfuljs": "^1.0.6",
+    "color": "^4.2.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

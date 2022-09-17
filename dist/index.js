@@ -1,8 +1,25 @@
 (() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __commonJS = (cb, mod) => function __require() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
 
   // node_modules/blissfuljs/bliss.js
   var require_bliss = __commonJS({
@@ -6485,9 +6502,9 @@
       cs.to.rgb.percent = function() {
         var rgba = swizzle(arguments);
         var r = Math.round(rgba[0] / 255 * 100);
-        var g = Math.round(rgba[1] / 255 * 100);
+        var g2 = Math.round(rgba[1] / 255 * 100);
         var b = Math.round(rgba[2] / 255 * 100);
-        return rgba.length < 4 || rgba[3] === 1 ? "rgb(" + r + "%, " + g + "%, " + b + "%)" : "rgba(" + r + "%, " + g + "%, " + b + "%, " + rgba[3] + ")";
+        return rgba.length < 4 || rgba[3] === 1 ? "rgb(" + r + "%, " + g2 + "%, " + b + "%)" : "rgba(" + r + "%, " + g2 + "%, " + b + "%, " + rgba[3] + ")";
       };
       cs.to.hsl = function() {
         var hsla = swizzle(arguments);
@@ -6558,21 +6575,21 @@
       }
       convert.rgb.hsl = function(rgb) {
         const r = rgb[0] / 255;
-        const g = rgb[1] / 255;
+        const g2 = rgb[1] / 255;
         const b = rgb[2] / 255;
-        const min = Math.min(r, g, b);
-        const max = Math.max(r, g, b);
+        const min = Math.min(r, g2, b);
+        const max = Math.max(r, g2, b);
         const delta = max - min;
         let h;
         let s;
         if (max === min) {
           h = 0;
         } else if (r === max) {
-          h = (g - b) / delta;
-        } else if (g === max) {
+          h = (g2 - b) / delta;
+        } else if (g2 === max) {
           h = 2 + (b - r) / delta;
         } else if (b === max) {
-          h = 4 + (r - g) / delta;
+          h = 4 + (r - g2) / delta;
         }
         h = Math.min(h * 60, 360);
         if (h < 0) {
@@ -6595,10 +6612,10 @@
         let h;
         let s;
         const r = rgb[0] / 255;
-        const g = rgb[1] / 255;
+        const g2 = rgb[1] / 255;
         const b = rgb[2] / 255;
-        const v = Math.max(r, g, b);
-        const diff = v - Math.min(r, g, b);
+        const v = Math.max(r, g2, b);
+        const diff = v - Math.min(r, g2, b);
         const diffc = function(c) {
           return (v - c) / 6 / diff + 1 / 2;
         };
@@ -6608,11 +6625,11 @@
         } else {
           s = diff / v;
           rdif = diffc(r);
-          gdif = diffc(g);
+          gdif = diffc(g2);
           bdif = diffc(b);
           if (r === v) {
             h = bdif - gdif;
-          } else if (g === v) {
+          } else if (g2 === v) {
             h = 1 / 3 + rdif - bdif;
           } else if (b === v) {
             h = 2 / 3 + gdif - rdif;
@@ -6631,20 +6648,20 @@
       };
       convert.rgb.hwb = function(rgb) {
         const r = rgb[0];
-        const g = rgb[1];
+        const g2 = rgb[1];
         let b = rgb[2];
         const h = convert.rgb.hsl(rgb)[0];
-        const w = 1 / 255 * Math.min(r, Math.min(g, b));
-        b = 1 - 1 / 255 * Math.max(r, Math.max(g, b));
+        const w = 1 / 255 * Math.min(r, Math.min(g2, b));
+        b = 1 - 1 / 255 * Math.max(r, Math.max(g2, b));
         return [h, w * 100, b * 100];
       };
       convert.rgb.cmyk = function(rgb) {
         const r = rgb[0] / 255;
-        const g = rgb[1] / 255;
+        const g2 = rgb[1] / 255;
         const b = rgb[2] / 255;
-        const k = Math.min(1 - r, 1 - g, 1 - b);
+        const k = Math.min(1 - r, 1 - g2, 1 - b);
         const c = (1 - r - k) / (1 - k) || 0;
-        const m = (1 - g - k) / (1 - k) || 0;
+        const m = (1 - g2 - k) / (1 - k) || 0;
         const y = (1 - b - k) / (1 - k) || 0;
         return [c * 100, m * 100, y * 100, k * 100];
       };
@@ -6673,14 +6690,14 @@
       };
       convert.rgb.xyz = function(rgb) {
         let r = rgb[0] / 255;
-        let g = rgb[1] / 255;
+        let g2 = rgb[1] / 255;
         let b = rgb[2] / 255;
         r = r > 0.04045 ? ((r + 0.055) / 1.055) ** 2.4 : r / 12.92;
-        g = g > 0.04045 ? ((g + 0.055) / 1.055) ** 2.4 : g / 12.92;
+        g2 = g2 > 0.04045 ? ((g2 + 0.055) / 1.055) ** 2.4 : g2 / 12.92;
         b = b > 0.04045 ? ((b + 0.055) / 1.055) ** 2.4 : b / 12.92;
-        const x = r * 0.4124 + g * 0.3576 + b * 0.1805;
-        const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-        const z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+        const x = r * 0.4124 + g2 * 0.3576 + b * 0.1805;
+        const y = r * 0.2126 + g2 * 0.7152 + b * 0.0722;
+        const z = r * 0.0193 + g2 * 0.1192 + b * 0.9505;
         return [x * 100, y * 100, z * 100];
       };
       convert.rgb.lab = function(rgb) {
@@ -6809,43 +6826,43 @@
         }
         const n = wh + f * (v - wh);
         let r;
-        let g;
+        let g2;
         let b;
         switch (i) {
           default:
           case 6:
           case 0:
             r = v;
-            g = n;
+            g2 = n;
             b = wh;
             break;
           case 1:
             r = n;
-            g = v;
+            g2 = v;
             b = wh;
             break;
           case 2:
             r = wh;
-            g = v;
+            g2 = v;
             b = n;
             break;
           case 3:
             r = wh;
-            g = n;
+            g2 = n;
             b = v;
             break;
           case 4:
             r = n;
-            g = wh;
+            g2 = wh;
             b = v;
             break;
           case 5:
             r = v;
-            g = wh;
+            g2 = wh;
             b = n;
             break;
         }
-        return [r * 255, g * 255, b * 255];
+        return [r * 255, g2 * 255, b * 255];
       };
       convert.cmyk.rgb = function(cmyk) {
         const c = cmyk[0] / 100;
@@ -6853,27 +6870,27 @@
         const y = cmyk[2] / 100;
         const k = cmyk[3] / 100;
         const r = 1 - Math.min(1, c * (1 - k) + k);
-        const g = 1 - Math.min(1, m * (1 - k) + k);
+        const g2 = 1 - Math.min(1, m * (1 - k) + k);
         const b = 1 - Math.min(1, y * (1 - k) + k);
-        return [r * 255, g * 255, b * 255];
+        return [r * 255, g2 * 255, b * 255];
       };
       convert.xyz.rgb = function(xyz) {
         const x = xyz[0] / 100;
         const y = xyz[1] / 100;
         const z = xyz[2] / 100;
         let r;
-        let g;
+        let g2;
         let b;
         r = x * 3.2406 + y * -1.5372 + z * -0.4986;
-        g = x * -0.9689 + y * 1.8758 + z * 0.0415;
+        g2 = x * -0.9689 + y * 1.8758 + z * 0.0415;
         b = x * 0.0557 + y * -0.204 + z * 1.057;
         r = r > 31308e-7 ? 1.055 * r ** (1 / 2.4) - 0.055 : r * 12.92;
-        g = g > 31308e-7 ? 1.055 * g ** (1 / 2.4) - 0.055 : g * 12.92;
+        g2 = g2 > 31308e-7 ? 1.055 * g2 ** (1 / 2.4) - 0.055 : g2 * 12.92;
         b = b > 31308e-7 ? 1.055 * b ** (1 / 2.4) - 0.055 : b * 12.92;
         r = Math.min(Math.max(0, r), 1);
-        g = Math.min(Math.max(0, g), 1);
+        g2 = Math.min(Math.max(0, g2), 1);
         b = Math.min(Math.max(0, b), 1);
-        return [r * 255, g * 255, b * 255];
+        return [r * 255, g2 * 255, b * 255];
       };
       convert.xyz.lab = function(xyz) {
         let x = xyz[0];
@@ -6934,13 +6951,13 @@
         return [l, a, b];
       };
       convert.rgb.ansi16 = function(args, saturation = null) {
-        const [r, g, b] = args;
+        const [r, g2, b] = args;
         let value = saturation === null ? convert.rgb.hsv(args)[2] : saturation;
         value = Math.round(value / 50);
         if (value === 0) {
           return 30;
         }
-        let ansi = 30 + (Math.round(b / 255) << 2 | Math.round(g / 255) << 1 | Math.round(r / 255));
+        let ansi = 30 + (Math.round(b / 255) << 2 | Math.round(g2 / 255) << 1 | Math.round(r / 255));
         if (value === 2) {
           ansi += 60;
         }
@@ -6951,9 +6968,9 @@
       };
       convert.rgb.ansi256 = function(args) {
         const r = args[0];
-        const g = args[1];
+        const g2 = args[1];
         const b = args[2];
-        if (r === g && g === b) {
+        if (r === g2 && g2 === b) {
           if (r < 8) {
             return 16;
           }
@@ -6962,7 +6979,7 @@
           }
           return Math.round((r - 8) / 247 * 24) + 232;
         }
-        const ansi = 16 + 36 * Math.round(r / 255 * 5) + 6 * Math.round(g / 255 * 5) + Math.round(b / 255 * 5);
+        const ansi = 16 + 36 * Math.round(r / 255 * 5) + 6 * Math.round(g2 / 255 * 5) + Math.round(b / 255 * 5);
         return ansi;
       };
       convert.ansi16.rgb = function(args) {
@@ -6976,9 +6993,9 @@
         }
         const mult = (~~(args > 50) + 1) * 0.5;
         const r = (color & 1) * mult * 255;
-        const g = (color >> 1 & 1) * mult * 255;
+        const g2 = (color >> 1 & 1) * mult * 255;
         const b = (color >> 2 & 1) * mult * 255;
-        return [r, g, b];
+        return [r, g2, b];
       };
       convert.ansi256.rgb = function(args) {
         if (args >= 232) {
@@ -6988,9 +7005,9 @@
         args -= 16;
         let rem;
         const r = Math.floor(args / 36) / 5 * 255;
-        const g = Math.floor((rem = args % 36) / 6) / 5 * 255;
+        const g2 = Math.floor((rem = args % 36) / 6) / 5 * 255;
         const b = rem % 6 / 5 * 255;
-        return [r, g, b];
+        return [r, g2, b];
       };
       convert.rgb.hex = function(args) {
         const integer = ((Math.round(args[0]) & 255) << 16) + ((Math.round(args[1]) & 255) << 8) + (Math.round(args[2]) & 255);
@@ -7010,16 +7027,16 @@
         }
         const integer = parseInt(colorString, 16);
         const r = integer >> 16 & 255;
-        const g = integer >> 8 & 255;
+        const g2 = integer >> 8 & 255;
         const b = integer & 255;
-        return [r, g, b];
+        return [r, g2, b];
       };
       convert.rgb.hcg = function(rgb) {
         const r = rgb[0] / 255;
-        const g = rgb[1] / 255;
+        const g2 = rgb[1] / 255;
         const b = rgb[2] / 255;
-        const max = Math.max(Math.max(r, g), b);
-        const min = Math.min(Math.min(r, g), b);
+        const max = Math.max(Math.max(r, g2), b);
+        const min = Math.min(Math.min(r, g2), b);
         const chroma = max - min;
         let grayscale;
         let hue;
@@ -7031,11 +7048,11 @@
         if (chroma <= 0) {
           hue = 0;
         } else if (max === r) {
-          hue = (g - b) / chroma % 6;
-        } else if (max === g) {
+          hue = (g2 - b) / chroma % 6;
+        } else if (max === g2) {
           hue = 2 + (b - r) / chroma;
         } else {
-          hue = 4 + (r - g) / chroma;
+          hue = 4 + (r - g2) / chroma;
         }
         hue /= 6;
         hue %= 1;
@@ -7064,9 +7081,9 @@
       convert.hcg.rgb = function(hcg) {
         const h = hcg[0] / 360;
         const c = hcg[1] / 100;
-        const g = hcg[2] / 100;
+        const g2 = hcg[2] / 100;
         if (c === 0) {
-          return [g * 255, g * 255, g * 255];
+          return [g2 * 255, g2 * 255, g2 * 255];
         }
         const pure = [0, 0, 0];
         const hi = h % 1 * 6;
@@ -7104,7 +7121,7 @@
             pure[1] = 0;
             pure[2] = w;
         }
-        mg = (1 - c) * g;
+        mg = (1 - c) * g2;
         return [
           (c * pure[0] + mg) * 255,
           (c * pure[1] + mg) * 255,
@@ -7113,8 +7130,8 @@
       };
       convert.hcg.hsv = function(hcg) {
         const c = hcg[1] / 100;
-        const g = hcg[2] / 100;
-        const v = c + g * (1 - c);
+        const g2 = hcg[2] / 100;
+        const v = c + g2 * (1 - c);
         let f = 0;
         if (v > 0) {
           f = c / v;
@@ -7123,8 +7140,8 @@
       };
       convert.hcg.hsl = function(hcg) {
         const c = hcg[1] / 100;
-        const g = hcg[2] / 100;
-        const l = g * (1 - c) + 0.5 * c;
+        const g2 = hcg[2] / 100;
+        const l = g2 * (1 - c) + 0.5 * c;
         let s = 0;
         if (l > 0 && l < 0.5) {
           s = c / (2 * l);
@@ -7135,8 +7152,8 @@
       };
       convert.hcg.hwb = function(hcg) {
         const c = hcg[1] / 100;
-        const g = hcg[2] / 100;
-        const v = c + g * (1 - c);
+        const g2 = hcg[2] / 100;
+        const v = c + g2 * (1 - c);
         return [hcg[0], (v - c) * 100, (1 - v) * 100];
       };
       convert.hwb.hcg = function(hwb) {
@@ -7144,11 +7161,11 @@
         const b = hwb[2] / 100;
         const v = 1 - b;
         const c = v - w;
-        let g = 0;
+        let g2 = 0;
         if (c < 1) {
-          g = (v - c) / (1 - c);
+          g2 = (v - c) / (1 - c);
         }
-        return [hwb[0], c * 100, g * 100];
+        return [hwb[0], c * 100, g2 * 100];
       };
       convert.apple.rgb = function(apple) {
         return [apple[0] / 65535 * 255, apple[1] / 65535 * 255, apple[2] / 65535 * 255];
@@ -7811,7 +7828,7 @@
             });
         }
       };
-      var ConsCircles = class {
+      var ConsCircles2 = class {
         constructor(options = {}) {
           const CCStyles = $("#ConsCircleStyles");
           if (!CCStyles) {
@@ -7831,7 +7848,7 @@
             showCaption,
             labels
           } = this.options;
-          const check = ConsCircles.checkData(dataIn);
+          const check = ConsCircles2.checkData(dataIn);
           if (check !== true)
             throw check;
           this.id = _.uniqueId();
@@ -7845,7 +7862,7 @@
             document.head.appendChild(linkEl);
           }
           this.data = dataIn;
-          this.All = ConsCircles.rowSums(_.values(dataIn));
+          this.All = ConsCircles2.rowSums(_.values(dataIn));
           this.n = _.sum(this.All);
           this.columns = this.All.length;
           this.groupLabels = ["All", ..._.keys(this.data)];
@@ -7909,7 +7926,7 @@
                 }
               } : null
             ],
-            "aria-description": ConsCircles.genDescText(this)
+            "aria-description": ConsCircles2.genDescText(this)
           });
           this.targetEl.appendChild(this.container);
           this.setFontSize();
@@ -7942,7 +7959,7 @@
           });
           this.visiblePercent.forEach((d, i) => {
             let x = discXPositions[i];
-            let fill = ConsCircles.getRGB(this.options.bgColor);
+            let fill = ConsCircles2.getRGB(this.options.bgColor);
             let disc = new SceneItem({
               type: "disc",
               name: `disc_${i + 1}`,
@@ -7958,7 +7975,7 @@
           });
           this.visibleReal.forEach((real, i) => {
             let x = discXPositions[i];
-            let fill = ConsCircles.getRGB(this.options.bgColor);
+            let fill = ConsCircles2.getRGB(this.options.bgColor);
             let label = new SceneItem({
               type: "disc_label",
               name: `disc_label_${i + 1}`,
@@ -7983,10 +8000,10 @@
           return this.scene.every((item) => item.time >= item.duration);
         }
         get colorTextOnColor() {
-          return ConsCircles.getTextColor(this.currentColor, this.currentColor);
+          return ConsCircles2.getTextColor(this.currentColor, this.currentColor);
         }
         get colorTextOnBground() {
-          return ConsCircles.getTextColor(this.bgColor, this.currentColor);
+          return ConsCircles2.getTextColor(this.bgColor, this.currentColor);
         }
         get discLabels() {
           switch (this.options.nStyle) {
@@ -8066,7 +8083,7 @@
             else
               return this.data[row];
           });
-          return ConsCircles.rowSums(rows);
+          return ConsCircles2.rowSums(rows);
         }
         get visiblePercent() {
           const {
@@ -8158,7 +8175,7 @@
           const { x } = item.end;
           const { time, duration } = item;
           const y = interpolate({ a: item.start.y, b: item.end.y, time, duration });
-          const fill = ConsCircles.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
+          const fill = ConsCircles2.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
           ctx.fillStyle = fill;
           ctx.font = `${this.options.labelSize}px ${this.options.fontFamily}`;
           ctx.textAlign = "center";
@@ -8172,7 +8189,7 @@
           const { ctx } = this;
           const { x, y } = item.end;
           const { time, duration } = item;
-          const fill = ConsCircles.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
+          const fill = ConsCircles2.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
           const radius = interpolate({ a: item.start.radius, b: item.end.radius, time, duration });
           ctx.fillStyle = fill;
           ctx.beginPath();
@@ -8193,19 +8210,19 @@
           this.scene.forEach((item, i) => {
             switch (item.type) {
               case "axis_label":
-                item.setProp("fill", ConsCircles.getRGB(colorTextOnBground), standardRate);
+                item.setProp("fill", ConsCircles2.getRGB(colorTextOnBground), standardRate);
                 return;
               case "disc":
                 item.setProp("radius", discRadii[item.number]);
-                item.setProp("fill", ConsCircles.getRGB(currentColor), standardRate);
+                item.setProp("fill", ConsCircles2.getRGB(currentColor), standardRate);
                 return;
               case "disc_label":
                 item.content = discLabels[item.number];
                 if (visibleReal[item.number] < realMean) {
                   item.setProp("y", lowLabelY);
-                  item.setProp("fill", ConsCircles.getRGB(colorTextOnBground), standardRate);
+                  item.setProp("fill", ConsCircles2.getRGB(colorTextOnBground), standardRate);
                 } else {
-                  item.setProp("fill", ConsCircles.getRGB(colorTextOnColor), standardRate);
+                  item.setProp("fill", ConsCircles2.getRGB(colorTextOnColor), standardRate);
                   item.setProp("y", discY);
                 }
                 return;
@@ -8215,12 +8232,12 @@
             if (inView.includes(butt.dataset.groupName)) {
               butt._.style({
                 backgroundColor: groupColors[butt.dataset.groupName],
-                color: ConsCircles.getTextColor(groupColors[butt.dataset.groupName], groupColors[butt.dataset.groupName])
+                color: ConsCircles2.getTextColor(groupColors[butt.dataset.groupName], groupColors[butt.dataset.groupName])
               });
             } else {
               butt._.style({
                 backgroundColor: "transparent",
-                color: ConsCircles.getTextColor(options.bgColor, groupColors[butt.dataset.groupName])
+                color: ConsCircles2.getTextColor(options.bgColor, groupColors[butt.dataset.groupName])
               });
             }
           });
@@ -8275,14 +8292,25 @@
           return consistent;
         }
       };
-      window.ConsCircles = ConsCircles;
+      window.ConsCircles = ConsCircles2;
       module.exports = {
-        ConsCircles,
+        ConsCircles: ConsCircles2,
         SceneItem
       };
     }
   });
-  require_ConsCircles();
+
+  // src/js/index.js
+  var import_ConsCircles = __toESM(require_ConsCircles());
+  window.g = new import_ConsCircles.ConsCircles({
+    labels: ["1", "5", "9"],
+    caption: "Summary",
+    colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
+    showCaption: true,
+    extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+    fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`
+  });
+  g.init();
 })();
 /**
  * @license
@@ -8292,4 +8320,3 @@
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
-//# sourceMappingURL=ConsCircles.js.map
