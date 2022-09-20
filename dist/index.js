@@ -7718,10 +7718,6 @@
   var require_ConsCircles = __commonJS({
     "src/js/ConsCircles.js"(exports, module) {
       var Bliss2 = require_bliss();
-      var {
-        update,
-        initial
-      } = require_lodash();
       var _ = require_lodash();
       var Color = require_color();
       window.inter_functions = {
@@ -7758,18 +7754,27 @@
         }
       };
       var EMBED_STYLES = `
-    .cons-circles figcaption { white-space:nowrap; overflow:hidden; text-overflow: ellipsis; transition: color .3s; }
-    ul.cc-controls-group { display:flex; justify-content:center; padding: 0 3rem; flex-wrap:wrap; }
+    .cons-circles figcaption { white-space:nowrap; overflow:hidden; text-overflow: ellipsis; transition: color .3s; height: 1.2em; }
+    .cc-controls {display:flex; justify-content:space-between; align-items:center; }
+    ul.cc-controls-group { display:flex; justify-content:center; padding: 0 2rem; flex-wrap:wrap; }
     button.cc-control { appearance:none; -webkit-appearance:none; border:none; border-radius:999px; margin:.2em; font-size: .7em; padding: .08em .6em; padding-left:1em; font-family:inherit; position:relative; white-space:nowrap;}
     button.cc-control:before { content:"\\2022"; display:inline-block; font-size:1em; line-height: 0; vertical-align:unset; position:absolute; left: .5ch; top: 1ch; }
+    select.cc-nstyle-select { appearance:none; -webkit-appearance:none; }
+    button.cc-global-switch, select.cc-nstyle-select { height: 2.4ch; font-family: inherit; border:none; border-radius:999px; margin:.2em; padding: .08em .6em; color:white; font-size: .4em; background:lightslategray; cursor:pointer;}
+    button.cc-global-switch.active { border:.5px solid lightslategray; color: slategray; background: white;}
+    button.cc-global-switch:hover, button.cc-global-switch:active {filter:brightness(0.7);}
+    .cc-controls.no-groups button.cc-global-switch, .cc-controls.no-groups ul.cc-controls-group { visibility:hidden; }
 `;
       var FIXTURE = {
-        "EOLC": [11, 8, 21, 17, 25, 43, 79, 99, 162]
+        "Farmers": [2, 4, 45, 56, 23, 22, 2],
+        "Doctors": [3, 56, 45, 4, 1, 1, 0],
+        "Lawyers": [45, 34, 23, 4, 6, 1, 0]
       };
       var DEFAULTS = {
         allowGroupMix: true,
         allowGroupMixColorMix: true,
         altColumns: null,
+        byArea: false,
         bgColor: "white",
         canvasRes: 1e3,
         caption: "The default data",
@@ -7782,14 +7787,26 @@
         fontRatio: 30,
         labels: ["Low", "Neutral", "High"],
         labelSize: 40,
+        mixOnShift: true,
         noControls: false,
+        noTrack: true,
         nStyle: "highLow",
         percentOf: "row",
         relToMax: true,
         showCaption: false,
-        target: ".cons-circles"
+        target: ".cons-circles",
+        trackColor: "lightgray"
       };
       var CANVAS_RATIO = 5 / 1;
+      var NSTYLE_OPTIONS = ["highLow", "percentHighLow", "all", "allPercent", "none"];
+      function median(numbers) {
+        const sorted = Array.from(numbers).sort((a, b) => a - b);
+        const middle = Math.floor(sorted.length / 2);
+        if (sorted.length % 2 === 0) {
+          return (sorted[middle - 1] + sorted[middle]) / 2;
+        }
+        return sorted[middle];
+      }
       var SceneItem = class {
         constructor(props = null) {
           if (_.isNull(props))
@@ -7897,14 +7914,23 @@
                 width: this.canvWidth,
                 height: this.canvHeight
               },
-              this.hasControls && !this.options.noControls ? {
+              !this.options.noControls ? {
                 tag: "div",
                 id: `cc-controls-${this.id}`,
+                className: `cc-controls ${this.hasGroups ? "has-groups" : "no-groups"}`,
                 style: {
-                  height: "2.8em",
                   width: "100%"
                 },
-                contents: {
+                contents: [{
+                  tag: "button",
+                  className: "cc-global-switch",
+                  innerHTML: `n-Local`,
+                  events: {
+                    click: (evt) => {
+                      this.handleGlobalSwitch.call(this, evt);
+                    }
+                  }
+                }, {
                   tag: "ul",
                   className: "cc-controls-group",
                   contents: this.groupLabels.map((group) => {
@@ -7923,7 +7949,25 @@
                       }
                     };
                   })
-                }
+                }, {
+                  tag: "select",
+                  className: "cc-nstyle-select",
+                  contents: NSTYLE_OPTIONS.map((nstyle) => {
+                    const opt = {
+                      tag: "option",
+                      contents: _.startCase(nstyle).replace("Percent", "%"),
+                      value: nstyle
+                    };
+                    if (nstyle == this.options.nStyle)
+                      opt.selected = true;
+                    return opt;
+                  }),
+                  events: {
+                    change: (evt) => {
+                      this.handleNStyleSelect.call(this, evt);
+                    }
+                  }
+                }]
               } : null
             ],
             "aria-description": ConsCircles2.genDescText(this)
@@ -8012,12 +8056,30 @@
             case "highLow":
               return this.visibleReal.map((v, i) => {
                 if (v == _.max(this.visibleReal)) {
-                  return `${v} (n=${_.sum(this.visibleReal)})`;
+                  return `${v}|(n=${_.sum(this.visibleReal)})`;
                 }
                 if (v == _.min(this.visibleReal)) {
                   return `(${v})`;
                 }
                 return "";
+              });
+            case "percentHighLow":
+              return this.visiblePercent.map((v, i) => {
+                if (v == _.max(this.visiblePercent)) {
+                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                }
+                if (v == _.min(this.visiblePercent)) {
+                  return `(${_.round(v * 100, 1)}%)`;
+                }
+                return "";
+              });
+            case "allPercent":
+              return this.visiblePercent.map((v, i) => {
+                if (v == _.max(this.visiblePercent)) {
+                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                } else {
+                  return `${_.round(v * 100, 1)}%`;
+                }
               });
             default:
               return this.visibleReal.map((v, i) => {
@@ -8059,6 +8121,9 @@
         get maxDiscRadius() {
           return this.canvHeight * 0.3;
         }
+        get maxDiscArea() {
+          return Math.PI * this.maxDiscRadius * this.maxDiscRadius;
+        }
         get discXPositions() {
           const {
             canvWidth,
@@ -8070,7 +8135,7 @@
             return i * (maxDiscRadius + gap) + maxDiscRadius * (i + 1);
           });
         }
-        get hasControls() {
+        get hasGroups() {
           return this.rows.length > 1;
         }
         get rows() {
@@ -8102,8 +8167,16 @@
           return this.visiblePercent.map((v) => v / b);
         }
         get discRadii() {
+          if (this.options.byArea)
+            return this.discRadiiByArea;
           const weightedRadius = this.options.relToMax ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
-          return this.reweightedPercent.map((pc) => pc * weightedRadius);
+          return this.options.percentOf == "row" ? this.reweightedPercent.map((pc) => pc * weightedRadius) : this.visiblePercent.map((pc) => pc * weightedRadius);
+        }
+        get discRadiiByArea() {
+          const getRadius = (pc) => {
+            return Math.sqrt(pc * this.maxDiscArea / Math.PI);
+          };
+          return this.options.percentOf == "row" ? this.reweightedPercent.map(getRadius) : this.visiblePercent.map(getRadius);
         }
         get standardRate() {
           return 15 + _.random(0, 10);
@@ -8111,35 +8184,75 @@
         get realMean() {
           return _.mean(this.visibleReal);
         }
+        get globalMedian() {
+          return median(_.flatten(this.rows));
+        }
         handleAll(evt) {
-          console.debug({ evt });
           evt.stopPropagation();
           const group = evt.target?.dataset?.groupName;
           if (!group)
             return;
-          if (this.inView.includes(group)) {
-            this.inView.splice(this.inView.indexOf(group), 1);
+          if (!this.options.mixOnShift || this.options.mixOnShift && evt.shiftKey) {
+            if (this.inView.includes(group)) {
+              this.inView.splice(this.inView.indexOf(group), 1);
+            } else {
+              this.inView.push(group);
+            }
+            if (this.inView.length == 0) {
+              this.inView = [group];
+              return;
+            }
+            if (this.inView.includes("All") && group !== "All") {
+              this.inView.splice(this.inView.indexOf("All"), 1);
+            }
+            if (this.inView.includes("All") && group == "All") {
+              this.inView = ["All"];
+            } else if (this.inView.length == this.groupLabels.length - 1) {
+              this.inView = ["All"];
+            }
           } else {
-            this.inView.push(group);
-          }
-          if (this.inView.length == 0) {
             this.inView = [group];
-            return;
-          }
-          if (this.inView.includes("All") && group !== "All") {
-            this.inView.splice(this.inView.indexOf("All"), 1);
-          }
-          if (this.inView.includes("All") && group == "All") {
-            this.inView = ["All"];
-          } else if (this.inView.length == this.groupLabels.length - 1) {
-            this.inView = ["All"];
           }
           this.update();
           this.loopStart();
         }
+        handleGlobalSwitch(evt) {
+          evt.stopPropagation();
+          if (this.options.percentOf == "row") {
+            this.options.percentOf = "n";
+            evt.target.classList.add("active");
+            evt.target.innerHTML = "n-Global";
+          } else {
+            this.options.percentOf = "row";
+            evt.target.classList.remove("active");
+            evt.target.innerHTML = "n-Local";
+          }
+          this.update();
+          this.loopStart();
+          return;
+        }
+        handleNStyleSelect(evt) {
+          evt.stopPropagation();
+          this.options.nStyle = evt.target.value;
+          this.update();
+          this.loopStart();
+          return;
+        }
         loop() {
           const self2 = this;
-          self2.ctx.clearRect(0, 0, this.canvWidth, this.canvHeight);
+          const { ctx } = this;
+          ctx.clearRect(0, 0, this.canvWidth, this.canvHeight);
+          if (!self2.options.noTrack) {
+            ctx.strokeStyle = self2.options.trackColor;
+            ctx.moveTo(self2.discXPositions[0], self2.discY);
+            ctx.lineTo(_.last(self2.discXPositions), self2.discY);
+            ctx.stroke();
+            self2.discXPositions.forEach((x) => {
+              ctx.moveTo(x, self2.discY - 5);
+              ctx.lineTo(x, self2.discY + 5);
+              ctx.stroke();
+            });
+          }
           this.scene.forEach((item) => {
             switch (item.type) {
               case "axis_label":
@@ -8172,15 +8285,25 @@
         }
         drawAxisLabel(item) {
           const { ctx } = this;
+          const { labelSize, fontFamily } = this.options;
           const { x } = item.end;
           const { time, duration } = item;
           const y = interpolate({ a: item.start.y, b: item.end.y, time, duration });
           const fill = ConsCircles2.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
           ctx.fillStyle = fill;
-          ctx.font = `${this.options.labelSize}px ${this.options.fontFamily}`;
           ctx.textAlign = "center";
           ctx.baseline = "bottom";
-          ctx.fillText(item.content, x, y + this.options.labelSize * 0.3);
+          if (item.content.split("|").length == 1) {
+            ctx.font = `${labelSize}px ${fontFamily}`;
+            ctx.fillText(item.content, x, y + this.options.labelSize * 0.3);
+          } else {
+            ctx.font = `${labelSize * 1}px ${fontFamily}`;
+            const rowsNo = item.content.split("|").length, rowTop = y - rowsNo * labelSize * 0.5;
+            item.content.split("|").forEach((content, i) => {
+              let newY = rowTop + i * labelSize + labelSize * 0.6;
+              ctx.fillText(content, x, newY);
+            });
+          }
           if (item.time < item.duration) {
             item.time = time + 1;
           }
@@ -8203,8 +8326,8 @@
           this.currentColor = this.groupColors[this.inView[0]];
           if (this.inView.length > 1)
             this.currentColor = "darkgray";
-          const { inView, currentColor, groupColors, options, standardRate, discRadii, discLabels, colorTextOnColor, colorTextOnBground, visibleReal, realMean, discY, lowLabelY } = this;
-          if ($("span.caption-add", this.container))
+          const { inView, currentColor, groupColors, options, standardRate, discRadii, discLabels, colorTextOnColor, colorTextOnBground, visibleReal, realMean, globalMedian, discY, lowLabelY } = this;
+          if ($("span.caption-add", this.container) && this.hasGroups)
             $("span.caption-add", this.container).innerText = this.inView[0] == "All" ? " - All Groups" : ` - ${this.inView.join(" + ")}`;
           $(".cons-circles figcaption")._.style({ color: this.colorTextOnBground });
           this.scene.forEach((item, i) => {
@@ -8218,7 +8341,7 @@
                 return;
               case "disc_label":
                 item.content = discLabels[item.number];
-                if (visibleReal[item.number] < realMean) {
+                if (discRadii[item.number] < this.options.labelSize * 1.5) {
                   item.setProp("y", lowLabelY);
                   item.setProp("fill", ConsCircles2.getRGB(colorTextOnBground), standardRate);
                 } else {
@@ -8263,7 +8386,9 @@
           return Color(color).rgb().array();
         }
         static rowSums(data) {
-          return data[0].map((v, i) => {
+          if (!_.isArray(data) && !_.isArray(data[0]))
+            return null;
+          return (data[0] || []).map((v, i) => {
             return _.sum(data.map((v2) => v2[i]));
           });
         }
@@ -8303,12 +8428,13 @@
   // src/js/index.js
   var import_ConsCircles = __toESM(require_ConsCircles());
   window.g = new import_ConsCircles.ConsCircles({
-    labels: ["1", "5", "9"],
-    caption: "Summary",
+    labels: ["Disagree", "Agree"],
+    caption: "Example",
     colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
     showCaption: true,
     extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-    fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`
+    fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+    nStyle: "all"
   });
   g.init();
 })();

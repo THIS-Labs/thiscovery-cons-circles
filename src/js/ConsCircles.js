@@ -3,9 +3,6 @@
 // 0.1 Sept 2022
 
 const Bliss = require('blissfuljs');
-const {
-    update, initial
-} = require('lodash');
 const _ = require('lodash');
 const Color = require('color');
 
@@ -45,26 +42,22 @@ window.interpolate = ({ a, b, time, duration, easing = DEFAULT_EASING }) => {
 };
 
 const EMBED_STYLES = `
-    .cons-circles figcaption { white-space:nowrap; overflow:hidden; text-overflow: ellipsis; transition: color .3s; }
-    ul.cc-controls-group { display:flex; justify-content:center; padding: 0 3rem; flex-wrap:wrap; }
+    .cons-circles figcaption { white-space:nowrap; overflow:hidden; text-overflow: ellipsis; transition: color .3s; height: 1.2em; }
+    .cc-controls {display:flex; justify-content:space-between; align-items:center; }
+    ul.cc-controls-group { display:flex; justify-content:center; padding: 0 2rem; flex-wrap:wrap; }
     button.cc-control { appearance:none; -webkit-appearance:none; border:none; border-radius:999px; margin:.2em; font-size: .7em; padding: .08em .6em; padding-left:1em; font-family:inherit; position:relative; white-space:nowrap;}
     button.cc-control:before { content:"\\2022"; display:inline-block; font-size:1em; line-height: 0; vertical-align:unset; position:absolute; left: .5ch; top: 1ch; }
+    select.cc-nstyle-select { appearance:none; -webkit-appearance:none; }
+    button.cc-global-switch, select.cc-nstyle-select { height: 2.4ch; font-family: inherit; border:none; border-radius:999px; margin:.2em; padding: .08em .6em; color:white; font-size: .4em; background:lightslategray; cursor:pointer;}
+    button.cc-global-switch.active { border:.5px solid lightslategray; color: slategray; background: white;}
+    button.cc-global-switch:hover, button.cc-global-switch:active {filter:brightness(0.7);}
+    .cc-controls.no-groups button.cc-global-switch, .cc-controls.no-groups ul.cc-controls-group { visibility:hidden; }
 `; 
 
-// const FIXTURE = {
-//     "Farmers": [2, 4, 45, 56, 23, 22, 2],
-//     "Doctors": [3, 56, 45, 4, 1, 1, 0],
-//     "Lawyers": [45, 34, 23, 4, 6, 1, 0]
-// }
-
-// const FIXTURE = {
-//     "Farmers": [2, 4, 45, 5, 23, 22, 2, 40, 1],
-//     "Doctors": [3, 5, 4, 4, 1, 1, 0, 13, 2],
-//     "Lawyers": [3, 3, 23, 4, 6, 1, 0, 0, 12]
-// }
-
 const FIXTURE = {
-    "EOLC" : [11,8,21,17,25,43,79,99,162]
+    "Farmers": [2, 4, 45, 56, 23, 22, 2],
+    "Doctors": [3, 56, 45, 4, 1, 1, 0],
+    "Lawyers": [45, 34, 23, 4, 6, 1, 0]
 }
 
 const DEFAULTS = {
@@ -72,6 +65,7 @@ const DEFAULTS = {
     allowGroupMix: true,
     allowGroupMixColorMix: true,
     altColumns: null, // alt numerical labelling for the columns
+    byArea : false,
     bgColor: "white", // background is transparent, but a colour to react to can be set
     canvasRes: 1000, // lower numbers improve performance?
     caption: "The default data",
@@ -84,15 +78,28 @@ const DEFAULTS = {
     fontRatio: 30,
     labels: ["Low", "Neutral", "High"], // understands one label as mid, two as left-right, three as left-mid-right, n as all columns
     labelSize : 40,
+    mixOnShift : true, // default behaviour is only to mix on Shift-click
     noControls: false,
-    nStyle : "highLow", // highLow | all
+    noTrack : true,
+    nStyle : "highLow", // highLow | all | percentHighLow | allPercent | none
     percentOf: "row", // row|n
     relToMax : true, // circles show proportionate to highest value
     showCaption: false,
     target: '.cons-circles',
+    trackColor : 'lightgray'
 }
 
 const CANVAS_RATIO = 5 / 1; // ratio for how much height canvas grabs
+const NSTYLE_OPTIONS = ["highLow","percentHighLow","all","allPercent","none"]
+
+function median(numbers) {
+    const sorted = Array.from(numbers).sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 0) {
+        return (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+    return sorted[middle];
+}
 
 class SceneItem {
     constructor(props = null) {
@@ -223,14 +230,23 @@ class ConsCircles {
                     width : this.canvWidth,
                     height : this.canvHeight
                 },
-                (this.hasControls && !this.options.noControls ? {
+                (!this.options.noControls ? {
                     tag: "div",
                     id: `cc-controls-${this.id}`,
+                    className: `cc-controls ${this.hasGroups ? 'has-groups':'no-groups'}`,
                     style: {
-                        height: "2.8em",
                         width: "100%"
                     },
-                    contents: {
+                    contents: [{
+                        tag : "button",
+                        className : "cc-global-switch",
+                        innerHTML : `n-Local`,
+                        events : {
+                            click : (evt)=>{
+                                this.handleGlobalSwitch.call(this,evt);
+                            }
+                        }
+                    },{
                         tag: 'ul',
                         className: 'cc-controls-group',
                         contents: this.groupLabels.map(group => {
@@ -249,7 +265,24 @@ class ConsCircles {
                                 }
                             }
                         })
-                    }
+                    },{
+                        tag: "select",
+                        className : "cc-nstyle-select",
+                        contents : NSTYLE_OPTIONS.map(nstyle=>{
+                            const opt = {
+                                tag : 'option',
+                                contents : _.startCase(nstyle).replace("Percent","%"),
+                                value : nstyle
+                            };
+                            if (nstyle == this.options.nStyle) opt.selected = true;
+                            return opt;
+                        }),
+                        events : {
+                            change : (evt)=>{
+                                this.handleNStyleSelect.call(this,evt);
+                            }
+                        }
+                    }]
                 } : null)
             ],
             'aria-description': ConsCircles.genDescText(this)
@@ -375,13 +408,32 @@ class ConsCircles {
             case "highLow":
                 return this.visibleReal.map((v,i)=>{
                     if (v==_.max(this.visibleReal)){
-                        return `${v} (n=${_.sum(this.visibleReal)})`;
+                        return `${v}|(n=${_.sum(this.visibleReal)})`;
                     }
                     if (v==_.min(this.visibleReal)){
                         return `(${v})`
                     }
                     return "";
                 });
+            case "percentHighLow":
+                return this.visiblePercent.map((v,i)=>{
+                    if (v==_.max(this.visiblePercent)){
+                        return `${_.round(v*100,1)}%|(n=${_.sum(this.visibleReal)})`;
+                    }
+                    if (v==_.min(this.visiblePercent)){
+                        return `(${_.round(v*100,1)}%)`
+                    }
+                    return "";
+                });
+            case "allPercent":
+                return this.visiblePercent.map((v,i)=>{
+                    if (v==_.max(this.visiblePercent)){
+                        return `${_.round(v*100,1)}%|(n=${_.sum(this.visibleReal)})`;
+                    }
+                    else {
+                        return `${_.round(v*100,1)}%`;
+                    }
+                })
             default:
                 return this.visibleReal.map((v, i) => {
                     let column = _.isArray(this.options.altColumns) ? this.options.altColumns[i] : i + 1;
@@ -431,6 +483,10 @@ class ConsCircles {
         return this.canvHeight * .3;
     }
 
+    get maxDiscArea() {
+        return Math.PI * this.maxDiscRadius * this.maxDiscRadius;
+    }
+
     get discXPositions() {
         const {
             canvWidth,
@@ -443,7 +499,7 @@ class ConsCircles {
         })
     }
 
-    get hasControls() {
+    get hasGroups() {
         return this.rows.length > 1;
     }
 
@@ -478,8 +534,15 @@ class ConsCircles {
     }
 
     get discRadii() {
+        if (this.options.byArea) return this.discRadiiByArea;
         const weightedRadius = this.options.relToMax ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
-        return this.reweightedPercent.map(pc=>pc*weightedRadius);
+        return this.options.percentOf == "row" ? this.reweightedPercent.map(pc=>pc*weightedRadius) : this.visiblePercent.map(pc=>pc*weightedRadius);
+    }
+    get discRadiiByArea() {
+        const getRadius = (pc)=>{
+            return Math.sqrt((pc*(this.maxDiscArea))/Math.PI);
+        }
+        return this.options.percentOf == "row" ? this.reweightedPercent.map(getRadius) : this.visiblePercent.map(getRadius);
     }
 
     get standardRate() {
@@ -491,8 +554,11 @@ class ConsCircles {
         return _.mean(this.visibleReal);
     }
 
+    get globalMedian() {
+        return median(_.flatten(this.rows));
+    }
+
     handleAll(evt) {
-        console.debug({evt});
         evt.stopPropagation();
         const group = evt.target?.dataset?.groupName;
         if (!group) return;
@@ -504,22 +570,67 @@ class ConsCircles {
         // else if (this.inView.includes("All") && (group !== "All")) { this.inView = [group]; }
         // else { this.inView.push(group); }
 
-        if (this.inView.includes(group)) {this.inView.splice(this.inView.indexOf(group),1)} // unlight group
-        else { this.inView.push(group); }
+        if (!this.options.mixOnShift || (this.options.mixOnShift && evt.shiftKey)) {
 
-        if (this.inView.length == 0) { this.inView = [group]; return; } // can't have empty group
-        if (this.inView.includes("All") && (group !== "All")) { this.inView.splice(this.inView.indexOf("All"),1); } // All can't co-exist
-        if (this.inView.includes("All") && (group == "All")) { this.inView = ["All"]; } // All can't co-exist
-        else if (this.inView.length == (this.groupLabels.length - 1)) { this.inView = ["All"]; } // all lit means All
+            if (this.inView.includes(group)) {this.inView.splice(this.inView.indexOf(group),1)} // unlight group
+            else { this.inView.push(group); }
+
+            if (this.inView.length == 0) { this.inView = [group]; return; } // can't have empty group
+            if (this.inView.includes("All") && (group !== "All")) { this.inView.splice(this.inView.indexOf("All"),1); } // All can't co-exist
+            if (this.inView.includes("All") && (group == "All")) { this.inView = ["All"]; } // All can't co-exist
+            else if (this.inView.length == (this.groupLabels.length - 1)) { this.inView = ["All"]; } // all lit means All
+
+        }
+        else {
+            this.inView = [group];
+        }
 
         this.update();
         this.loopStart();
     }
 
+    handleGlobalSwitch(evt){
+        evt.stopPropagation();
+        if (this.options.percentOf == "row") {
+            this.options.percentOf = "n";
+            evt.target.classList.add("active");
+            evt.target.innerHTML = "n-Global";
+        }
+        else {
+            this.options.percentOf = "row";
+            evt.target.classList.remove("active");
+            evt.target.innerHTML = "n-Local";
+        }
+        this.update();
+        this.loopStart();
+        return;
+    }
+
+    handleNStyleSelect(evt){
+        evt.stopPropagation();
+        this.options.nStyle = evt.target.value;
+        this.update();
+        this.loopStart();
+        return;
+    }
+
     loop() {
         const self = this;
+        const {ctx} = this;
         // draw!
-        self.ctx.clearRect(0,0,this.canvWidth,this.canvHeight);
+        ctx.clearRect(0,0,this.canvWidth,this.canvHeight);
+        // draw track & notches
+        if (!self.options.noTrack) {
+            ctx.strokeStyle = self.options.trackColor;
+            ctx.moveTo(self.discXPositions[0],self.discY);
+            ctx.lineTo(_.last(self.discXPositions),self.discY);
+            ctx.stroke(); // fnar
+            self.discXPositions.forEach(x=>{
+                ctx.moveTo(x,self.discY-5);
+                ctx.lineTo(x,self.discY+5);
+                ctx.stroke();
+            });
+        }
         // cycle scene
         this.scene.forEach(item=>{
             switch (item.type) {
@@ -553,15 +664,29 @@ class ConsCircles {
 
     drawAxisLabel(item){
         const {ctx} = this;
+        const {labelSize,fontFamily} = this.options;
         const {x} = item.end; // label x is fixed
         const { time, duration } = item;
         const y = interpolate({a:item.start.y,b:item.end.y,time,duration});
         const fill = ConsCircles.getInterpColor((item.start.fill || item.end.fill), item.end.fill, time, duration);
         ctx.fillStyle = fill;
-        ctx.font = `${this.options.labelSize}px ${this.options.fontFamily}`;
         ctx.textAlign = "center";
         ctx.baseline = "bottom";
-        ctx.fillText(item.content,x,y+(this.options.labelSize*0.3));
+
+        if (item.content.split("|").length == 1) {
+            ctx.font = `${labelSize}px ${fontFamily}`;
+            ctx.fillText(item.content,x,y+(this.options.labelSize*0.3));
+        }
+        else {
+            ctx.font = `${labelSize*1}px ${fontFamily}`;
+            const rowsNo = item.content.split("|").length, rowTop = y - (rowsNo*(labelSize)*0.5);
+            item.content.split("|").forEach((content,i)=>{
+                let newY = rowTop + (i*labelSize) + (labelSize*.6);
+                ctx.fillText(content,x,newY);
+            });
+        }
+
+
         // increment time
         if (item.time < item.duration) { item.time = time + 1; }
     }
@@ -588,10 +713,10 @@ class ConsCircles {
         // ('darkslategray' if more than one group mixed? - later version do gradients?)
         this.currentColor = this.groupColors[this.inView[0]];
         if (this.inView.length > 1) this.currentColor = "darkgray";
-        const { inView, currentColor, groupColors, options, standardRate, discRadii, discLabels, colorTextOnColor, colorTextOnBground, visibleReal, realMean, discY, lowLabelY } = this;
+        const { inView, currentColor, groupColors, options, standardRate, discRadii, discLabels, colorTextOnColor, colorTextOnBground, visibleReal, realMean, globalMedian, discY, lowLabelY } = this;
 
         // update caption
-        if ($("span.caption-add",this.container)) $("span.caption-add",this.container).innerText = this.inView[0] == "All" ? " - All Groups" : ` - ${this.inView.join(" + ")}`;
+        if ($("span.caption-add",this.container) && this.hasGroups) $("span.caption-add",this.container).innerText = this.inView[0] == "All" ? " - All Groups" : ` - ${this.inView.join(" + ")}`;
         $(".cons-circles figcaption")._.style({color:this.colorTextOnBground});
 
         // cycle scene objects
@@ -608,8 +733,9 @@ class ConsCircles {
                     return;
                 // update disc label content, position and colors
                 case "disc_label":
-                    item.content = discLabels[item.number];                        
-                    if (visibleReal[item.number] < realMean) {
+                    item.content = discLabels[item.number];
+                    // if ((visibleReal[item.number] < realMean) || (this.options.percentOf == "n")) {
+                    if (discRadii[item.number] < this.options.labelSize*1.5) {
                         // float down, change color
                         item.setProp("y",lowLabelY);
                         item.setProp("fill",ConsCircles.getRGB(colorTextOnBground),standardRate);
@@ -667,8 +793,9 @@ class ConsCircles {
     }
 
     static rowSums(data) {
+        if (!_.isArray(data) && !_.isArray(data[0])) return null;
         // presumes an array of rows of values
-        return (data[0]).map((v, i) => {
+        return (data[0] || []).map((v, i) => {
             return _.sum(data.map(v => v[i]));
         });
     }
