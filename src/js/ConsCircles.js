@@ -62,17 +62,17 @@ const FIXTURE = {
 
 const DEFAULTS = {
 
-    allowGroupMix: true,
-    allowGroupMixColorMix: true,
-    altColumns: null, // alt numerical labelling for the columns
-    byArea : false,
+    // allowGroupMix: true,
+    // allowGroupMixColorMix: true,
+    // altColumns: null, // alt numerical labelling for the columns
     bgColor: "white", // background is transparent, but a colour to react to can be set
+    byArea : false,
     canvasRes: 1000, // lower numbers improve performance?
     caption: "The default data",
     colors: ["seagreen", "orangered", "lightskyblue","gold", "deeppink", "limegreen","royalblue", "darkorange", "darkviolet"], // first color is used as default and for 'All' aggregate
     dataIn: FIXTURE,
     debug: false,
-    easing: null, // override default easing
+    // easing: null, // override default easing
     extFont: null, // URL for external font stylesheet, must also be defined in fontFamily to work
     fontFamily: `system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
     fontRatio: 30,
@@ -436,7 +436,7 @@ class ConsCircles {
                 })
             default:
                 return this.visibleReal.map((v, i) => {
-                    let column = _.isArray(this.options.altColumns) ? this.options.altColumns[i] : i + 1;
+                    // let column = _.isArray(this.options.altColumns) ? this.options.altColumns[i] : i + 1;
                     return `${this.visibleReal[i]}`
                 });
         }
