@@ -7771,17 +7771,13 @@
         "Lawyers": [45, 34, 23, 4, 6, 1, 0]
       };
       var DEFAULTS = {
-        allowGroupMix: true,
-        allowGroupMixColorMix: true,
-        altColumns: null,
-        byArea: false,
         bgColor: "white",
+        byArea: false,
         canvasRes: 1e3,
         caption: "The default data",
         colors: ["seagreen", "orangered", "lightskyblue", "gold", "deeppink", "limegreen", "royalblue", "darkorange", "darkviolet"],
         dataIn: FIXTURE,
         debug: false,
-        easing: null,
         extFont: null,
         fontFamily: `system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
         fontRatio: 30,
@@ -7845,7 +7841,7 @@
             });
         }
       };
-      var ConsCircles2 = class {
+      var ConsCircles = class {
         constructor(options = {}) {
           const CCStyles = $("#ConsCircleStyles");
           if (!CCStyles) {
@@ -7865,7 +7861,7 @@
             showCaption,
             labels
           } = this.options;
-          const check = ConsCircles2.checkData(dataIn);
+          const check = ConsCircles.checkData(dataIn);
           if (check !== true)
             throw check;
           this.id = _.uniqueId();
@@ -7879,7 +7875,7 @@
             document.head.appendChild(linkEl);
           }
           this.data = dataIn;
-          this.All = ConsCircles2.rowSums(_.values(dataIn));
+          this.All = ConsCircles.rowSums(_.values(dataIn));
           this.n = _.sum(this.All);
           this.columns = this.All.length;
           this.groupLabels = ["All", ..._.keys(this.data)];
@@ -7970,7 +7966,7 @@
                 }]
               } : null
             ],
-            "aria-description": ConsCircles2.genDescText(this)
+            "aria-description": ConsCircles.genDescText(this)
           });
           this.targetEl.appendChild(this.container);
           this.setFontSize();
@@ -8003,7 +7999,7 @@
           });
           this.visiblePercent.forEach((d, i) => {
             let x = discXPositions[i];
-            let fill = ConsCircles2.getRGB(this.options.bgColor);
+            let fill = ConsCircles.getRGB(this.options.bgColor);
             let disc = new SceneItem({
               type: "disc",
               name: `disc_${i + 1}`,
@@ -8019,7 +8015,7 @@
           });
           this.visibleReal.forEach((real, i) => {
             let x = discXPositions[i];
-            let fill = ConsCircles2.getRGB(this.options.bgColor);
+            let fill = ConsCircles.getRGB(this.options.bgColor);
             let label = new SceneItem({
               type: "disc_label",
               name: `disc_label_${i + 1}`,
@@ -8044,10 +8040,10 @@
           return this.scene.every((item) => item.time >= item.duration);
         }
         get colorTextOnColor() {
-          return ConsCircles2.getTextColor(this.currentColor, this.currentColor);
+          return ConsCircles.getTextColor(this.currentColor, this.currentColor);
         }
         get colorTextOnBground() {
-          return ConsCircles2.getTextColor(this.bgColor, this.currentColor);
+          return ConsCircles.getTextColor(this.bgColor, this.currentColor);
         }
         get discLabels() {
           switch (this.options.nStyle) {
@@ -8083,7 +8079,6 @@
               });
             default:
               return this.visibleReal.map((v, i) => {
-                let column = _.isArray(this.options.altColumns) ? this.options.altColumns[i] : i + 1;
                 return `${this.visibleReal[i]}`;
               });
           }
@@ -8148,7 +8143,7 @@
             else
               return this.data[row];
           });
-          return ConsCircles2.rowSums(rows);
+          return ConsCircles.rowSums(rows);
         }
         get visiblePercent() {
           const {
@@ -8289,7 +8284,7 @@
           const { x } = item.end;
           const { time, duration } = item;
           const y = interpolate({ a: item.start.y, b: item.end.y, time, duration });
-          const fill = ConsCircles2.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
+          const fill = ConsCircles.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
           ctx.fillStyle = fill;
           ctx.textAlign = "center";
           ctx.baseline = "bottom";
@@ -8312,7 +8307,7 @@
           const { ctx } = this;
           const { x, y } = item.end;
           const { time, duration } = item;
-          const fill = ConsCircles2.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
+          const fill = ConsCircles.getInterpColor(item.start.fill || item.end.fill, item.end.fill, time, duration);
           const radius = interpolate({ a: item.start.radius, b: item.end.radius, time, duration });
           ctx.fillStyle = fill;
           ctx.beginPath();
@@ -8333,19 +8328,19 @@
           this.scene.forEach((item, i) => {
             switch (item.type) {
               case "axis_label":
-                item.setProp("fill", ConsCircles2.getRGB(colorTextOnBground), standardRate);
+                item.setProp("fill", ConsCircles.getRGB(colorTextOnBground), standardRate);
                 return;
               case "disc":
                 item.setProp("radius", discRadii[item.number]);
-                item.setProp("fill", ConsCircles2.getRGB(currentColor), standardRate);
+                item.setProp("fill", ConsCircles.getRGB(currentColor), standardRate);
                 return;
               case "disc_label":
                 item.content = discLabels[item.number];
                 if (discRadii[item.number] < this.options.labelSize * 1.5) {
                   item.setProp("y", lowLabelY);
-                  item.setProp("fill", ConsCircles2.getRGB(colorTextOnBground), standardRate);
+                  item.setProp("fill", ConsCircles.getRGB(colorTextOnBground), standardRate);
                 } else {
-                  item.setProp("fill", ConsCircles2.getRGB(colorTextOnColor), standardRate);
+                  item.setProp("fill", ConsCircles.getRGB(colorTextOnColor), standardRate);
                   item.setProp("y", discY);
                 }
                 return;
@@ -8355,12 +8350,12 @@
             if (inView.includes(butt.dataset.groupName)) {
               butt._.style({
                 backgroundColor: groupColors[butt.dataset.groupName],
-                color: ConsCircles2.getTextColor(groupColors[butt.dataset.groupName], groupColors[butt.dataset.groupName])
+                color: ConsCircles.getTextColor(groupColors[butt.dataset.groupName], groupColors[butt.dataset.groupName])
               });
             } else {
               butt._.style({
                 backgroundColor: "transparent",
-                color: ConsCircles2.getTextColor(options.bgColor, groupColors[butt.dataset.groupName])
+                color: ConsCircles.getTextColor(options.bgColor, groupColors[butt.dataset.groupName])
               });
             }
           });
@@ -8417,26 +8412,87 @@
           return consistent;
         }
       };
-      window.ConsCircles = ConsCircles2;
+      window.ConsCircles = ConsCircles;
       module.exports = {
-        ConsCircles: ConsCircles2,
+        ConsCircles,
         SceneItem
       };
     }
   });
 
   // src/js/index.js
-  var import_ConsCircles = __toESM(require_ConsCircles());
-  window.g = new import_ConsCircles.ConsCircles({
-    labels: ["Disagree", "Agree"],
-    caption: "Example",
-    colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
-    showCaption: true,
-    extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-    fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
-    nStyle: "all"
+  var require_js = __commonJS({
+    "src/js/index.js"(exports) {
+      var import_ConsCircles = __toESM(require_ConsCircles());
+      var Bliss2 = require_bliss();
+      var pages = [
+        () => {
+          window.g = new import_ConsCircles.ConsCircles({
+            dataIn: {
+              "allRows": [74, 46, 129, 123, 432, 314, 822, 1141, 2899]
+            },
+            labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            caption: "Scale range",
+            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
+            showCaption: true,
+            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+            nStyle: "all"
+          });
+          g.init();
+        },
+        () => {
+          window.g = new import_ConsCircles.ConsCircles({
+            dataIn: {
+              "Extremes": [1852, 565, 344, 92, 137],
+              "3rd Quartile": [638, 303, 274, 148, 132],
+              "4th Quartile": [483, 319, 333, 197, 163]
+            },
+            labels: ["9 or 1", "8 or 2", "7 or 3", "6 or 4", "5"],
+            caption: "Scale range",
+            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
+            showCaption: true,
+            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+            nStyle: "all"
+          });
+          g.init();
+        },
+        () => {
+          window.g = new import_ConsCircles.ConsCircles({
+            labels: ["Disagree", "", "Agree"],
+            caption: "Example",
+            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
+            showCaption: true,
+            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+            nStyle: "highLow"
+          });
+          g.init();
+        }
+      ];
+      var pageNo = 0;
+      pages[pageNo].call(exports);
+      window.document.body.addEventListener("keydown", (evt) => {
+        evt.stopPropagation();
+        if (evt.code == "ArrowRight") {
+          pageNo = pageNo + 1;
+          if (pageNo > pages.length - 1)
+            pageNo = pages.length - 1;
+          $(".cons-circles").innerHTML = "";
+          pages[pageNo].call(exports);
+        }
+        if (evt.code == "ArrowLeft") {
+          pageNo = pageNo - 1;
+          if (pageNo < 0)
+            pageNo = 0;
+          $(".cons-circles").innerHTML = "";
+          pages[pageNo].call(exports);
+        }
+      });
+    }
   });
-  g.init();
+  require_js();
 })();
 /**
  * @license

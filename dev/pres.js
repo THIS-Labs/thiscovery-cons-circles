@@ -1,4 +1,4 @@
-import { ConsCircles } from "./ConsCircles.js";
+import { ConsCircles } from "../src/js/ConsCircles";
 const Bliss = require('blissfuljs');
 
 const pages = [
@@ -28,16 +28,10 @@ const pages = [
             dataIn : {
                 // "allRows" : [74,46,129,123,432,314,822,1141,2899]
                 // "allRows" : [2973,1187,951,437,432]
-                // "Extremes" : [2158,228,286,103,215],
-                // "Extremes" : [1990,468,306,73,153], // method B
-                "Extremes" : [1852,565,344,92,137], // method C
+                "Extremes" : [2158,228,286,103,215],
                 // "bottom" : [815,959,665,334,217],
-                // "3rd Quartile" : [443,573,293,99,87],
-                // "3rd Quartile" : [593,351,278,131,142], // method B
-                "3rd Quartile" : [638,303,274,148,132], // method c
-                // "4th Quartile" : [372,386,372,235,130]
-                // "4th Quartile" : [390,368,367,233,137] // method B
-                "4th Quartile" : [483,319,333,197,163] // method c
+                "3rd Quartile" : [443,573,293,99,87],
+                "4th Quartile" : [372,386,372,235,130]
             },
             labels: ["9 or 1","8 or 2","7 or 3","6 or 4","5"],
             caption : "Scale range",

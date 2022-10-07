@@ -7754,17 +7754,13 @@
         "Lawyers": [45, 34, 23, 4, 6, 1, 0]
       };
       var DEFAULTS = {
-        allowGroupMix: true,
-        allowGroupMixColorMix: true,
-        altColumns: null,
-        byArea: false,
         bgColor: "white",
+        byArea: false,
         canvasRes: 1e3,
         caption: "The default data",
         colors: ["seagreen", "orangered", "lightskyblue", "gold", "deeppink", "limegreen", "royalblue", "darkorange", "darkviolet"],
         dataIn: FIXTURE,
         debug: false,
-        easing: null,
         extFont: null,
         fontFamily: `system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
         fontRatio: 30,
@@ -8066,7 +8062,6 @@
               });
             default:
               return this.visibleReal.map((v, i) => {
-                let column = _.isArray(this.options.altColumns) ? this.options.altColumns[i] : i + 1;
                 return `${this.visibleReal[i]}`;
               });
           }
