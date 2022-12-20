@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "bsync": "browser-sync start --config bs-config.js",
-    "build:dev": "run-s build:scss build:js test",
+    "build:dev": "run-s build:js test",
     "build:js": "esbuild ./src/js/ConsCircles.js --bundle --outfile=./dist/ConsCircles.js --sourcemap && esbuild ./src/js/index.js --bundle --loader:.csv=text --outfile=./dist/index.js",
     "build:scss": "sass src/css/ --source-map",
     "dev_watch": "chokidar src/*/**.{js,scss} -c 'npm run build:dev'",

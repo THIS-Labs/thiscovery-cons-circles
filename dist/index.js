@@ -7772,7 +7772,7 @@
       };
       var DEFAULTS = {
         bgColor: "white",
-        byArea: false,
+        byArea: true,
         canvasRes: 1e3,
         caption: "The default data",
         colors: ["seagreen", "orangered", "lightskyblue", "gold", "deeppink", "limegreen", "royalblue", "darkorange", "darkviolet"],
@@ -7788,7 +7788,6 @@
         noTrack: true,
         nStyle: "highLow",
         percentOf: "row",
-        relToMax: true,
         showCaption: false,
         target: ".cons-circles",
         trackColor: "lightgray"
@@ -8046,13 +8045,14 @@
           return ConsCircles.getTextColor(this.bgColor, this.currentColor);
         }
         get discLabels() {
+          const n = this.options.percentOf == "row" ? _.sum(this.visibleReal) : this.n;
           switch (this.options.nStyle) {
             case "none":
               return this.visibleReal.map((v) => "");
             case "highLow":
               return this.visibleReal.map((v, i) => {
                 if (v == _.max(this.visibleReal)) {
-                  return `${v}|(n=${_.sum(this.visibleReal)})`;
+                  return `${v}|(n=${n})`;
                 }
                 if (v == _.min(this.visibleReal)) {
                   return `(${v})`;
@@ -8062,7 +8062,7 @@
             case "percentHighLow":
               return this.visiblePercent.map((v, i) => {
                 if (v == _.max(this.visiblePercent)) {
-                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                  return `${_.round(v * 100, 1)}%|(n=${n})`;
                 }
                 if (v == _.min(this.visiblePercent)) {
                   return `(${_.round(v * 100, 1)}%)`;
@@ -8072,7 +8072,7 @@
             case "allPercent":
               return this.visiblePercent.map((v, i) => {
                 if (v == _.max(this.visiblePercent)) {
-                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                  return `${_.round(v * 100, 1)}%|(n=${n})`;
                 } else {
                   return `${_.round(v * 100, 1)}%`;
                 }
@@ -8164,7 +8164,7 @@
         get discRadii() {
           if (this.options.byArea)
             return this.discRadiiByArea;
-          const weightedRadius = this.options.relToMax ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
+          const weightedRadius = this.options.percentOf == "row" ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
           return this.options.percentOf == "row" ? this.reweightedPercent.map((pc) => pc * weightedRadius) : this.visiblePercent.map((pc) => pc * weightedRadius);
         }
         get discRadiiByArea() {
@@ -22299,8 +22299,8 @@
       var Papa = require_papaparse_min();
       var _ = require_lodash();
       var { Chart } = require_chart();
-      function getStandardDeviation(array) {
-        const n = array.length;
+      function getStandardDeviation(array, sample = false) {
+        const n = sample ? array.length - 1 : array.length;
         const mean = array.reduce((a, b) => a + b) / n;
         return Math.sqrt(array.map((x) => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
       }
@@ -22324,10 +22324,11 @@
           row: row.map(_.toNumber),
           grav: _.mean(modes),
           range: _.keys(freq).length,
-          stdDev: getStandardDeviation(row.map(_.toNumber)),
+          stdDev: getStandardDeviation(row.map(_.toNumber), true),
           full_freq
         });
       });
+      console.debug(`Mean Std Deviation : ${_.mean(results.map(({ stdDev }) => stdDev))}`);
       var allRows = results.map(({ row }) => row);
       var allRowsTotal = totalize_frequencies(allRows);
       results = _.shuffle(results);
@@ -22359,6 +22360,54 @@
       };
       var Bliss2 = require_bliss();
       var pages = [
+        () => {
+          window.g = new import_ConsCircles.ConsCircles({
+            dataIn: {
+              "1st Quartile": midsExtremesNinePoint(quartile_results[0]),
+              "2nd Quartile": midsExtremesNinePoint(quartile_results[1]),
+              "3rd Quartile": midsExtremesNinePoint(quartile_results[2]),
+              "4th Quartile": midsExtremesNinePoint(quartile_results[3])
+            },
+            labels: ["Mid", "6/4", "7/3", "8/2", "9/1"],
+            caption: "Scale range",
+            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
+            showCaption: true,
+            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+            nStyle: "all"
+          });
+          g.init();
+        },
+        () => {
+          const container = $(".cons-circles");
+          const canv = $.create("canvas", {
+            style: {
+              width: "100%",
+              height: "70vh"
+            }
+          });
+          container.appendChild(canv);
+          canv.width = canv.clientWidth * devicePixelRatio;
+          canv.height = canv.clientHeight * devicePixelRatio;
+          const ctx = canv.getContext("2d");
+          const data2 = {
+            datasets: [{
+              label: "StdDev v Modal Average",
+              data: results.map((item, i) => {
+                const x = i;
+                return { y: item.stdDev, x: item.grav };
+              }),
+              borderColor: "crimson",
+              fill: false
+            }]
+          };
+          const config = {
+            type: "scatter",
+            data: data2,
+            options: {}
+          };
+          const chart = new Chart(ctx, config);
+        },
         () => {
           const container = $(".cons-circles");
           const canv = $.create("canvas", {
@@ -22464,39 +22513,6 @@
             options: {}
           };
           const chart = new Chart(ctx, config);
-        },
-        () => {
-          window.g = new import_ConsCircles.ConsCircles({
-            dataIn: {
-              allRowsTotal
-            },
-            labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            caption: "Scale range",
-            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
-            showCaption: true,
-            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
-            nStyle: "all"
-          });
-          g.init();
-        },
-        () => {
-          window.g = new import_ConsCircles.ConsCircles({
-            dataIn: {
-              "1st Quartile": midsExtremesNinePoint(quartile_results[0]),
-              "2nd Quartile": midsExtremesNinePoint(quartile_results[1]),
-              "3rd Quartile": midsExtremesNinePoint(quartile_results[2]),
-              "4th Quartile": midsExtremesNinePoint(quartile_results[3])
-            },
-            labels: ["Mid", "6/4", "7/3", "8/2", "9/1"],
-            caption: "Scale range",
-            colors: ["crimson", "lightpink", "gold", "maroon", "lightsteelblue", "mediumseagreen"],
-            showCaption: true,
-            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
-            nStyle: "all"
-          });
-          g.init();
         }
       ];
       var pageNo = 0;

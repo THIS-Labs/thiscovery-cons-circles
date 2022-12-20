@@ -7755,7 +7755,7 @@
       };
       var DEFAULTS = {
         bgColor: "white",
-        byArea: false,
+        byArea: true,
         canvasRes: 1e3,
         caption: "The default data",
         colors: ["seagreen", "orangered", "lightskyblue", "gold", "deeppink", "limegreen", "royalblue", "darkorange", "darkviolet"],
@@ -7771,7 +7771,6 @@
         noTrack: true,
         nStyle: "highLow",
         percentOf: "row",
-        relToMax: true,
         showCaption: false,
         target: ".cons-circles",
         trackColor: "lightgray"
@@ -8029,13 +8028,14 @@
           return ConsCircles.getTextColor(this.bgColor, this.currentColor);
         }
         get discLabels() {
+          const n = this.options.percentOf == "row" ? _.sum(this.visibleReal) : this.n;
           switch (this.options.nStyle) {
             case "none":
               return this.visibleReal.map((v) => "");
             case "highLow":
               return this.visibleReal.map((v, i) => {
                 if (v == _.max(this.visibleReal)) {
-                  return `${v}|(n=${_.sum(this.visibleReal)})`;
+                  return `${v}|(n=${n})`;
                 }
                 if (v == _.min(this.visibleReal)) {
                   return `(${v})`;
@@ -8045,7 +8045,7 @@
             case "percentHighLow":
               return this.visiblePercent.map((v, i) => {
                 if (v == _.max(this.visiblePercent)) {
-                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                  return `${_.round(v * 100, 1)}%|(n=${n})`;
                 }
                 if (v == _.min(this.visiblePercent)) {
                   return `(${_.round(v * 100, 1)}%)`;
@@ -8055,7 +8055,7 @@
             case "allPercent":
               return this.visiblePercent.map((v, i) => {
                 if (v == _.max(this.visiblePercent)) {
-                  return `${_.round(v * 100, 1)}%|(n=${_.sum(this.visibleReal)})`;
+                  return `${_.round(v * 100, 1)}%|(n=${n})`;
                 } else {
                   return `${_.round(v * 100, 1)}%`;
                 }
@@ -8147,7 +8147,7 @@
         get discRadii() {
           if (this.options.byArea)
             return this.discRadiiByArea;
-          const weightedRadius = this.options.relToMax ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
+          const weightedRadius = this.options.percentOf == "row" ? this.maxDiscRadius / _.max(this.reweightedPercent) : this.maxDiscRadius;
           return this.options.percentOf == "row" ? this.reweightedPercent.map((pc) => pc * weightedRadius) : this.visiblePercent.map((pc) => pc * weightedRadius);
         }
         get discRadiiByArea() {

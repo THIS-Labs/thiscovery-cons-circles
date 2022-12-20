@@ -5,8 +5,8 @@ const Papa = require('papaparse');
 const _ = require('lodash');
 const { Chart } = require('chart.js');
 
-function getStandardDeviation (array) {
-    const n = array.length
+function getStandardDeviation (array,sample=false) {
+    const n = sample ? array.length-1 : array.length;
     const mean = array.reduce((a, b) => a + b) / n
     return Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n)
 }
@@ -33,10 +33,12 @@ data.data.forEach(row=>{
         row:row.map(_.toNumber),
         grav : _.mean(modes),
         range : _.keys(freq).length,
-        stdDev : getStandardDeviation(row.map(_.toNumber)),
+        stdDev : getStandardDeviation(row.map(_.toNumber),true),
         full_freq
     });
 });
+
+console.debug(`Mean Std Deviation : ${_.mean(results.map(({stdDev})=>stdDev))}`); 
 
 const allRows =  results.map(({row})=>row);
 const allRowsTotal = totalize_frequencies(allRows);
@@ -85,6 +87,88 @@ import { ConsCircles } from "./ConsCircles.js";
 const Bliss = require('blissfuljs');
 
 const pages = [
+    // ()=>{
+    //     window.g = new ConsCircles({
+    //         dataIn : {
+    //             allRowsTotal
+    //             // "allRows" : [2973,1187,951,437,432]
+    //             // "Extremes" : [2158,228,286,103,215],
+    //             // "bottom" : [815,959,665,334,217],
+    //             // "3rd Quartile" : [443,573,293,99,87],
+    //             // "4th Quartile" : [372,386,372,235,130]
+    //         },
+    //         labels: ["1","2","3","4","5","6","7","8","9"],
+    //         caption : "Scale range",
+    //         colors: ["crimson","lightpink","gold","maroon","lightsteelblue","mediumseagreen"],
+    //         showCaption: true,
+    //         extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+    //         fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+    //         nStyle : "all"
+    //     });
+    //     // g.inView = ["Doctors"];
+    //     g.init();
+    // },
+    ()=>{
+        window.g = new ConsCircles({
+            dataIn : {
+                // "allRows" : [74,46,129,123,432,314,822,1141,2899]
+                // "allRows" : [2973,1187,951,437,432]
+                // "Extremes" : [2158,228,286,103,215],
+                // "Extremes" : [1990,468,306,73,153], // method B
+                // "Extremes" : [1852,565,344,92,137], // method C
+                // "bottom" : [815,959,665,334,217],
+                // "3rd Quartile" : [443,573,293,99,87],
+                // "3rd Quartile" : [593,351,278,131,142], // method B
+                // "3rd Quartile" : [638,303,274,148,132], // method c
+                // "4th Quartile" : [372,386,372,235,130]
+                // "4th Quartile" : [390,368,367,233,137] // method B
+                // "4th Quartile" : [483,319,333,197,163] // method c
+                "1st Quartile" : midsExtremesNinePoint(quartile_results[0]),
+                "2nd Quartile" : midsExtremesNinePoint(quartile_results[1]),
+                "3rd Quartile" : midsExtremesNinePoint(quartile_results[2]),
+                "4th Quartile" : midsExtremesNinePoint(quartile_results[3])
+            },
+            labels: ["Mid","6/4","7/3","8/2","9/1"],
+            caption : "Scale range",
+            colors: ["crimson","lightpink","gold","maroon","lightsteelblue","mediumseagreen"],
+            showCaption: true,
+            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
+            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
+            nStyle : "all"
+        });
+        // g.inView = ["Doctors"];
+        g.init();
+    },
+    ()=>{
+        const container = $(".cons-circles");
+        const canv = $.create("canvas",{
+            style : {
+                width : "100%",
+                height: "70vh"
+            }
+        });
+        container.appendChild(canv);
+        canv.width = canv.clientWidth * devicePixelRatio;
+        canv.height = canv.clientHeight * devicePixelRatio;
+        const ctx = canv.getContext('2d');
+        const data = {
+            datasets : [{
+                label : "StdDev v Modal Average",
+                data : results.map((item,i)=>{
+                    const x = i ;
+                    return {y:item.stdDev,x:item.grav}
+                }),
+                borderColor: "crimson",
+                fill: false
+            }]
+        };
+        const config = {
+            type : 'scatter',
+            data,
+            options : {}
+        };
+        const chart = new Chart(ctx,config);
+    },
     ()=>{
         // we're going to borrow cons-circles for a graph
         const container = $(".cons-circles");
@@ -199,59 +283,6 @@ const pages = [
         const chart = new Chart(ctx,config);
 
     },
-    ()=>{
-        window.g = new ConsCircles({
-            dataIn : {
-                allRowsTotal
-                // "allRows" : [2973,1187,951,437,432]
-                // "Extremes" : [2158,228,286,103,215],
-                // "bottom" : [815,959,665,334,217],
-                // "3rd Quartile" : [443,573,293,99,87],
-                // "4th Quartile" : [372,386,372,235,130]
-            },
-            labels: ["1","2","3","4","5","6","7","8","9"],
-            caption : "Scale range",
-            colors: ["crimson","lightpink","gold","maroon","lightsteelblue","mediumseagreen"],
-            showCaption: true,
-            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
-            nStyle : "all"
-        });
-        // g.inView = ["Doctors"];
-        g.init();
-    },
-    ()=>{
-        window.g = new ConsCircles({
-            dataIn : {
-                // "allRows" : [74,46,129,123,432,314,822,1141,2899]
-                // "allRows" : [2973,1187,951,437,432]
-                // "Extremes" : [2158,228,286,103,215],
-                // "Extremes" : [1990,468,306,73,153], // method B
-                // "Extremes" : [1852,565,344,92,137], // method C
-                // "bottom" : [815,959,665,334,217],
-                // "3rd Quartile" : [443,573,293,99,87],
-                // "3rd Quartile" : [593,351,278,131,142], // method B
-                // "3rd Quartile" : [638,303,274,148,132], // method c
-                // "4th Quartile" : [372,386,372,235,130]
-                // "4th Quartile" : [390,368,367,233,137] // method B
-                // "4th Quartile" : [483,319,333,197,163] // method c
-                "1st Quartile" : midsExtremesNinePoint(quartile_results[0]),
-                "2nd Quartile" : midsExtremesNinePoint(quartile_results[1]),
-                "3rd Quartile" : midsExtremesNinePoint(quartile_results[2]),
-                "4th Quartile" : midsExtremesNinePoint(quartile_results[3])
-            },
-            labels: ["Mid","6/4","7/3","8/2","9/1"],
-            caption : "Scale range",
-            colors: ["crimson","lightpink","gold","maroon","lightsteelblue","mediumseagreen"],
-            showCaption: true,
-            extFont: "https://thiscovery-public-assets.s3.eu-west-1.amazonaws.com/fonts/fonts.css",
-            fontFamily: `"thisco_Brown", "Brown-Regular", Arial, "Helvetica Neue", Helvetica, sans-serif`,
-            nStyle : "all"
-        });
-        // g.inView = ["Doctors"];
-        g.init();
-    },
-
     // ()=>{
     //     window.g = new ConsCircles({
     //         labels: ["Disagree","","Agree"],
